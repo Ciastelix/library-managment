@@ -1,91 +1,74 @@
-# Library Management System
+# Library Management
 
-This library management system allows users to manage libraries, books, and authors using a set of services and repositories.
+This library management allows users to manage libraries, books, and authors using a set of services and repositories.
 
 ## Table of Contents
 
-- [Overview](#Overview)
-- [Services](#Services)
-  - [LibraryService](#LibraryService)
-  - [BookService](#BookService)
-  - [AuthorService](#AuthorService)
-- [Repositories](#Repositories)
-  - [LibraryRepository](#LibraryRepository)
-  - [BookRepository](#BookRepository)
-  - [AuthorRepository](#AuthorRepository)
-- [Usage](#Usage)
-  - [Setting Up the Database](#Setting-Up-the-Database)
-  - [Adding a Library, Book, or Author](#Adding-a-Library,-Book,-or-Author)
-  - [Getting Libraries, Books, or Authors](#Getting-Libraries,-Books,-or-Authors)
-  - [Updating a Library, Book, or Author](#Updating-a-Library,-Book,-or-Author)
-  - [Deleting a Library, Book, or Author](#Deleting-a-Library,-Book,-or-Author)
+- [Installation](#installation)
+- [Running the Application](#running-the-application)
+- [API Endpoints](#api-endpoints)
+- [File Structure](#file-structure)
+- [License](#license)
 
-## Overview
+## Installation
 
-The library management system is designed to help manage libraries, books, and authors. It consists of services and repositories to interact with the database and perform CRUD operations. The system uses FastAPI as a web framework and SQLAlchemy as an ORM.
+1. Clone the repository
 
-## Services
+```bash
+git clone https://github.com/ciastelix/library-management.git
+```
 
-### LibraryService
+2. Change the working directory to the project folder:
 
-File: `app/services/library.py`
+```bash
+cd library-management
+```
 
-The LibraryService class contains methods to manage libraries, including getting libraries by ID or name, creating a new library, deleting a library, and updating a library.
+3. Install the dependencies using PDM:
 
-### BookService
+```bash
+pdm install
+```
 
-File: `app/services/book.py`
+4. Create a `.env` file in the root directory of the project and add the following environment variables:
 
-The `BookService` class contains methods to manage books, including getting books by ID or name, creating a new book, deleting a book, and updating a book.
+```bash
+# Database
+DATABASE_URL=sqllite:///db.sqlite3
+```
 
-### AuthorService
+## Running the Application
 
-File: `app/services/author.py`
+To run the application, use the following command:
 
-The `AuthorService` class contains methods to manage authors, including getting authors by ID or name, creating a new author, deleting an author, and updating an author.
+```bash
+pdm run uvicorn app.main:app --reload
+```
 
-## Repositories
+The application will be available at `http://127.0.0.1:8000/`.
 
-### LibraryRepository
+## API Endpoints
 
-File: `repositories/library.py`
+The following endpoints are available:
 
-The `LibraryRepository` class contains methods to interact with the database for library-related operations. It supports getting libraries by ID or name, adding a library, deleting a library, and updating a library.
+- /library: Retrieve a list of all libraries or create a new library; update, or delete a specific library by its ID
+- /author: Retrieve a list of all authors or create a new author; update, or delete a specific author by its ID
+- /book: Retrieve a list of all books or create a new book; update, or delete a specific book by its ID
 
-### BookRepository
+## File Structure
 
-File: `repositories/book.py`
-
-The `BookRepository` class contains methods to interact with the database for book-related operations. It supports getting books by ID or name, adding a book, deleting a book, and updating a book.
-
-### AuthorRepository
-
-File: `repositories/author.py`
-
-The `AuthorRepository` class contains methods to interact with the database for author-related operations. It supports getting authors by ID or name, adding an author, deleting an author, and updating an author.
-
-## Usage
-
-### Setting Up the Database
-
-Before you can use the library management system, you need to set up the database. To do this, you'll need to create a database and configure the connection string in the application's settings.
-
-### Adding a Library, Book, or Author
-
-To add a new library, book, or author, you can use the `create_library`, `create_book`, or `create_author` methods in their respective services. These methods take an instance of the corresponding schema class (`LibrarySchemaIn`, `BookSchemaIn`, or `AuthorSchemaIn`) as an argument.
-
-### Getting Libraries, Books, or Authors
-
-To get a list of all libraries, books, or authors, you can use the `get_library`, `get_book`, or `get_author` methods in their respective services. These methods support getting records by ID or name as well.
-
-### Updating a Library, Book, or Author
-
-To update an existing library, book, or author, you can use the `update_library`, `update_book`, or `update_author` methods in their respective services. These methods require the ID of the record to be updated and an instance of the corresponding schema class (`LibrarySchemaIn`, `BookSchemaIn`, or `AuthorSchemaIn`) containing the updated data.
-
-### Deleting a Library, Book, or Author
-
-To delete a library, book, or author, you can use the `delete_library`, `delete_book`, or `delete_author` methods in their respective services. These methods require the ID of the record to be deleted.
-
-## License
-
-This library management system is available under the [MIT license](LICENSE).
+- `app/`: Main application folder
+  - `models.py`: SQLAlchemy models for the database
+  - `schemas.py`: Pydantic schemas for data validation and serialization
+  - `services/`: Service classes that handle business logic
+    - `library.py`: Library service class
+    - `book.py`: Book service class
+    - `author.py`: Author service class
+  - `repositories/`: Repository classes that handle database operations
+    - `library.py`: Library repository class
+    - `book.py`: Book repository class
+    - `author.py`: Author repository class
+    - `db_session_handler.py`: Helper functions for database session management
+  - `containers.py`: Dependency injection container for the application
+  - `db.py`: Database configuration and session management
+- `main.py`: FastAPI application entry point
