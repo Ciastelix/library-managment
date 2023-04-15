@@ -72,3 +72,7 @@ The following endpoints are available:
   - `containers.py`: Dependency injection container for the application
   - `db.py`: Database configuration and session management
 - `main.py`: FastAPI application entry point
+
+## License
+
+This project is licensed under the terms of the MIT license. See the [LICENSE](LICENSE) file for more information.
