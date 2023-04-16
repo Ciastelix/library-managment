@@ -2,7 +2,7 @@ from sqlalchemy import Column, String, Date, ForeignKey, Boolean
 from app.db import Base
 from sqlalchemy.orm import relationship
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 class Author(Base):
@@ -26,7 +26,7 @@ class Book(Base):
     author = relationship("Author", back_populates="books", lazy="joined")
     library_id = Column(String, ForeignKey("libraries.id"))
     library = relationship("Library", back_populates="books", lazy="joined")
-    rental = relationship("Rental", back_populates="book", uselist=False)
+    rental = relationship("Rental", back_populates="book", uselist=False, lazy="joined")
 
     def __repr__(self) -> str:
         return f"Book(name={self.name} written_at={self.written_at})"
@@ -67,7 +67,11 @@ class Rental(Base):
     user_id = Column(String, ForeignKey("users.id"))
     user = relationship("User", back_populates="rentals", lazy="joined")
     rented_at = Column(Date, nullable=False, default=datetime.now().date())
-    returned_at = Column(Date, nullable=True)
+    returned_at = Column(
+        Date,
+        nullable=True,
+        default=(datetime.now() + timedelta(days=30)).date(),
+    )
 
     def __repr__(self) -> str:
         return f"Rental(book_id={self.book_id}, user_id={self.user_id}, rented_at={self.rented_at}, returned_at={self.returned_at})"

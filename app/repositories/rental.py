@@ -29,7 +29,7 @@ class RentalRepository:
 
     def get_all(self) -> list[Rental]:
         with self.session_factory() as session:
-            return session.query(Rental).options(subqueryload(Rental.user)).all()
+            return session.query(Rental).all()
 
     def delete(self, id: int) -> Rental:
         with self.session_factory() as session:

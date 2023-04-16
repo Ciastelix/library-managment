@@ -1,5 +1,9 @@
 from fastapi import APIRouter, status, HTTPException, Depends
 from app.services.author import AuthorService
+from app.services.book import BookService
+from app.services.library import LibraryService
+from app.services.user import UserService
+from app.services.rental import RentalService
 from app.containers import Container
 from dependency_injector.wiring import inject, Provide
 from app.schemas import (
@@ -10,8 +14,6 @@ from app.schemas import (
     BookSchemaIn,
     LibrarySchemaIn,
     UserSchemaIn,
-    UserSchema,
-    RentalSchema,
     RentalSchemaIn,
 )
 from app.repositories.password_managment import verify_password
@@ -72,7 +74,7 @@ async def root():
 async def generate_token(
     email: str,
     password: str,
-    user_service: AuthorService = Depends(Provide[Container.user_service]),
+    user_service: UserService = Depends(Provide[Container.user_service]),
 ):
     user = user_service.get_user(email=email)
     if user:
@@ -99,9 +101,9 @@ async def generate_token(
 @router.get("/book", status_code=status.HTTP_200_OK, tags=["book"])
 @inject
 async def get_book(
-    id: int = None,
+    id: str = None,
     name: str = None,
-    book_service: AuthorService = Depends(Provide[Container.book_service]),
+    book_service: BookService = Depends(Provide[Container.book_service]),
 ) -> BookSchema | list[BookSchema]:
     books = book_service.get_book(id, name)
     if books:
@@ -113,43 +115,55 @@ async def get_book(
 @inject
 async def create_book(
     book: BookSchemaIn,
-    book_service: AuthorService = Depends(Provide[Container.book_service]),
+    book_service: BookService = Depends(Provide[Container.book_service]),
+    token: str = Depends(oauth2_scheme),
 ):
-    try:
-        return book_service.create_book(book)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user = await get_current_user(token)
+    if user["is_superuser"]:
+        try:
+            return book_service.create_book(book)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 @router.delete("/book", status_code=status.HTTP_200_OK, tags=["book"])
 @inject
 async def delete_book(
-    id: int,
-    book_service: AuthorService = Depends(Provide[Container.book_service]),
+    id: str,
+    book_service: BookService = Depends(Provide[Container.book_service]),
+    token: str = Depends(oauth2_scheme),
 ):
-    try:
-        return book_service.delete_book(id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user = await get_current_user(token)
+    if user["is_superuser"]:
+        try:
+            return book_service.delete_book(id)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 @router.put("/book", status_code=status.HTTP_200_OK, tags=["book"])
 @inject
 async def update_book(
-    id: int,
+    id: str,
     book: BookSchemaIn,
-    book_service: AuthorService = Depends(Provide[Container.book_service]),
+    book_service: BookService = Depends(Provide[Container.book_service]),
+    token: str = Depends(oauth2_scheme),
 ):
-    try:
-        return book_service.update_book(id, book)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user = await get_current_user(token)
+    if user["is_superuser"]:
+        try:
+            return book_service.update_book(id, book)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 @router.get("/author", status_code=status.HTTP_200_OK, tags=["author"])
 @inject
 async def get_author(
-    id: int = None,
+    id: str = None,
     name: str = None,
     author_service: AuthorService = Depends(Provide[Container.author_service]),
 ) -> list[AuthorSchema] | AuthorSchema:
@@ -164,43 +178,55 @@ async def get_author(
 async def create_author(
     author: AuthorSchemaIn,
     author_service: AuthorService = Depends(Provide[Container.author_service]),
+    token: str = Depends(oauth2_scheme),
 ):
-    try:
-        return author_service.create_author(author)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user = await get_current_user(token)
+    if user["is_superuser"]:
+        try:
+            return author_service.create_author(author)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 @router.delete("/author", status_code=status.HTTP_200_OK, tags=["author"])
 @inject
 async def delete_author(
-    id: int,
+    id: str,
     author_service: AuthorService = Depends(Provide[Container.author_service]),
+    token: str = Depends(oauth2_scheme),
 ):
-    try:
-        return author_service.delete_author(id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user = await get_current_user(token)
+    if user["is_superuser"]:
+        try:
+            return author_service.delete_author(id)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 @router.put("/author", status_code=status.HTTP_200_OK, tags=["author"])
 async def update_author(
-    id: int,
+    id: str,
     author: AuthorSchemaIn,
     author_service: AuthorService = Depends(Provide[Container.author_service]),
+    token: str = Depends(oauth2_scheme),
 ):
-    try:
-        return author_service.update_author(id, author)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user = await get_current_user(token)
+    if user["is_superuser"]:
+        try:
+            return author_service.update_author(id, author)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 @router.get("/libary", status_code=status.HTTP_200_OK, tags=["library"])
 @inject
 async def get_libary(
-    id: int = None,
+    id: str = None,
     city: str = None,
-    library_service: AuthorService = Depends(Provide[Container.library_service]),
+    library_service: LibraryService = Depends(Provide[Container.library_service]),
 ) -> LibrarySchema | list[LibrarySchema]:
     library = library_service.get_library(id, city)
     if library:
@@ -212,43 +238,55 @@ async def get_libary(
 @inject
 async def create_library(
     library: LibrarySchemaIn,
-    library_service: AuthorService = Depends(Provide[Container.library_service]),
+    library_service: LibraryService = Depends(Provide[Container.library_service]),
+    token: str = Depends(oauth2_scheme),
 ):
-    try:
-        return library_service.create_library(library)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user = await get_current_user(token)
+    if user["is_superuser"]:
+        try:
+            return library_service.create_library(library)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    raise HTTPException(status_code=403, detail="Forbidden")
 
 
 @router.delete("/library", status_code=status.HTTP_200_OK, tags=["library"])
 @inject
 async def delete_library(
-    id: int,
-    library_service: AuthorService = Depends(Provide[Container.library_service]),
+    id: str,
+    library_service: LibraryService = Depends(Provide[Container.library_service]),
+    token: str = Depends(oauth2_scheme),
 ):
-    try:
-        return library_service.delete_library(id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user = await get_current_user(token)
+    if user["is_superuser"]:
+        try:
+            return library_service.delete_library(id)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    raise HTTPException(status_code=403, detail="Forbidden")
 
 
 @router.put("/library", status_code=status.HTTP_200_OK, tags=["library"])
 @inject
 async def update_library(
-    id: int,
+    id: str,
     library: LibrarySchemaIn,
-    library_service: AuthorService = Depends(Provide[Container.library_service]),
+    library_service: LibraryService = Depends(Provide[Container.library_service]),
+    token: str = Depends(oauth2_scheme),
 ):
-    try:
-        return library_service.update_library(id, library)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user = await get_current_user(token)
+    if user["is_superuser"]:
+        try:
+            return library_service.update_library(id, library)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    raise HTTPException(status_code=403, detail="Forbidden")
 
 
 @router.get("/user", status_code=status.HTTP_200_OK, tags=["user"])
 @inject
 async def get_user(
-    id: int = None,
+    id: str = None,
     name: str = None,
     user_service: AuthorService = Depends(Provide[Container.user_service]),
 ):
@@ -273,39 +311,51 @@ async def create_user(
 @router.put("/user", status_code=status.HTTP_200_OK, tags=["user"])
 @inject
 async def update_user(
-    id: int,
-    user: UserSchemaIn,
+    id: str,
+    userUpdate: UserSchemaIn,
     user_service: AuthorService = Depends(Provide[Container.user_service]),
+    token: str = Depends(oauth2_scheme),
 ):
-    try:
-        return user_service.update_user(id, user)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user = await get_current_user(token)
+    if user["is_superuser"] or id == user["id"]:
+        try:
+            return user_service.update_user(id, userUpdate)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    raise HTTPException(status_code=403, detail="You can't update this user.")
 
 
 @router.delete("/user", status_code=status.HTTP_200_OK, tags=["user"])
 @inject
 async def delete_user(
-    id: int,
+    id: str,
     user_service: AuthorService = Depends(Provide[Container.user_service]),
+    token: str = Depends(oauth2_scheme),
 ):
-    try:
-        return user_service.delete_user(id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user = await get_current_user(token)
+    if user["is_superuser"] or id == user["id"]:
+        try:
+            return user_service.delete_user(id)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    raise HTTPException(status_code=403, detail="You can't delete this user.")
 
 
 @router.get("/rental", status_code=status.HTTP_200_OK, tags=["rental"])
 @inject
 async def get_rental(
-    id: int = None,
-    user_id: int = None,
+    id: str = None,
     rental_service: AuthorService = Depends(Provide[Container.rental_service]),
     token: str = Depends(oauth2_scheme),
 ):
-    rentals = rental_service.get_rental(id, user_id)
+    user = await get_current_user(token)
+    rentals = rental_service.get_rental(id, user["id"])
     if rentals:
-        return rentals
+        if user["is_superuser"] or rentals[0].user_id == user["id"]:
+            return rentals
+        raise HTTPException(
+            status_code=403, detail="You are not allowed to see this rental."
+        )
     raise HTTPException(status_code=404, detail="Rental not found.")
 
 
@@ -316,9 +366,9 @@ async def create_rental(
     rental_service: AuthorService = Depends(Provide[Container.rental_service]),
     token: str = Depends(oauth2_scheme),
 ):
+    user = await get_current_user(token)
     try:
-        data = await get_current_user(token)
-        rental = rental.copy(update={"user_id": data["id"]})
+        rental = rental.copy(update={"user_id": user["id"]})
         return rental_service.create_rental(rental)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -327,23 +377,30 @@ async def create_rental(
 @router.put("/rental", status_code=status.HTTP_200_OK, tags=["rental"])
 @inject
 async def update_rental(
-    id: int,
+    id: str,
     rental: RentalSchemaIn,
     rental_service: AuthorService = Depends(Provide[Container.rental_service]),
+    token: str = Depends(oauth2_scheme),
 ):
-    try:
-        return rental_service.update_rental(id, rental)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user = await get_current_user(token)
+    if user["id"] == rental_service.get_rental(id)[0].user_id or user["is_superuser"]:
+        try:
+            return rental_service.update_rental(id, rental)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    raise HTTPException(status_code=400, detail="You can't update other user's rental.")
 
 
 @router.delete("/rental", status_code=status.HTTP_200_OK, tags=["rental"])
 @inject
 async def delete_rental(
-    id: int,
+    id: str,
     rental_service: AuthorService = Depends(Provide[Container.rental_service]),
+    user: dict = Depends(get_current_user),
 ):
-    try:
-        return rental_service.delete_rental(id)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    if user["id"] == id:
+        try:
+            return rental_service.delete_rental(id)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    raise HTTPException(status_code=400, detail="You can't delete other user's rental.")
