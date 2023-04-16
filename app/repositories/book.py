@@ -20,11 +20,11 @@ class BookRepository:
             return book
 
     def get_by_name(self, name: str) -> Book | list[Book]:
-        with self.session() as session:
+        with self.session_factory() as session:
             return session.query(Book).filter(Book.name == name).all()
 
     def get_by_id(self, id: int) -> Book:
-        with self.session() as session:
+        with self.session_factory() as session:
             return session.query(Book).filter(Book.id == id).first()
 
     def get_all(self) -> list[Book]:

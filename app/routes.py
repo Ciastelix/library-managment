@@ -9,15 +9,91 @@ from app.schemas import (
     AuthorSchema,
     BookSchemaIn,
     LibrarySchemaIn,
+    UserSchemaIn,
+    UserSchema,
+    RentalSchema,
+    RentalSchemaIn,
 )
-
+from app.repositories.password_managment import verify_password
+from fastapi.security import OAuth2PasswordBearer
+import datetime
+from dotenv import load_dotenv
+from os import environ
+import jwt
 
 router = APIRouter()
+
+load_dotenv()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+def create_jwt_token(data: dict):
+    expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
+    data.update({"exp": expiration})
+    token = jwt.encode(
+        data,
+        str(environ.get("SECRET_KEY")),
+        algorithm=str(environ.get("ALGORITHM")),
+    )
+    return token
+
+
+def decode_jwt_token(token: str):
+    try:
+        payload = jwt.decode(
+            token,
+            str(environ.get("SECRET_KEY")),
+            algorithms=[str(environ.get("ALGORITHM"))],
+        )
+        return payload
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired"
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
+
+
+async def get_current_user(token: str = Depends(oauth2_scheme)):
+    payload = decode_jwt_token(token)
+    return payload
 
 
 @router.get("/", status_code=status.HTTP_200_OK, tags=["root"])
 async def root():
     return
+
+
+@router.post("/token")
+@inject
+async def generate_token(
+    email: str,
+    password: str,
+    user_service: AuthorService = Depends(Provide[Container.user_service]),
+):
+    user = user_service.get_user(email=email)
+    if user:
+        user = user[0]
+    else:
+        raise HTTPException(404, detail="User not found")
+    if verify_password(password, user.password):
+        if user.is_active:
+            user_data = {
+                "id": user.id,
+                "name": user.email,
+                "is_superuser": user.is_superuser,
+            }
+            token = create_jwt_token(user_data)
+            return {"access_token": token, "token_type": "bearer"}
+        raise HTTPException(401, detail="User is not active")
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password",
+        )
 
 
 @router.get("/book", status_code=status.HTTP_200_OK, tags=["book"])
@@ -165,5 +241,109 @@ async def update_library(
 ):
     try:
         return library_service.update_library(id, library)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/user", status_code=status.HTTP_200_OK, tags=["user"])
+@inject
+async def get_user(
+    id: int = None,
+    name: str = None,
+    user_service: AuthorService = Depends(Provide[Container.user_service]),
+):
+    users = user_service.get_user(id, name)
+    if users:
+        return users
+    raise HTTPException(status_code=404, detail="User not found.")
+
+
+@router.post("/user", status_code=status.HTTP_201_CREATED, tags=["user"])
+@inject
+async def create_user(
+    user: UserSchemaIn,
+    user_service: AuthorService = Depends(Provide[Container.user_service]),
+):
+    try:
+        return user_service.create_user(user)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.put("/user", status_code=status.HTTP_200_OK, tags=["user"])
+@inject
+async def update_user(
+    id: int,
+    user: UserSchemaIn,
+    user_service: AuthorService = Depends(Provide[Container.user_service]),
+):
+    try:
+        return user_service.update_user(id, user)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/user", status_code=status.HTTP_200_OK, tags=["user"])
+@inject
+async def delete_user(
+    id: int,
+    user_service: AuthorService = Depends(Provide[Container.user_service]),
+):
+    try:
+        return user_service.delete_user(id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/rental", status_code=status.HTTP_200_OK, tags=["rental"])
+@inject
+async def get_rental(
+    id: int = None,
+    user_id: int = None,
+    rental_service: AuthorService = Depends(Provide[Container.rental_service]),
+    token: str = Depends(oauth2_scheme),
+):
+    rentals = rental_service.get_rental(id, user_id)
+    if rentals:
+        return rentals
+    raise HTTPException(status_code=404, detail="Rental not found.")
+
+
+@router.post("/rental", status_code=status.HTTP_201_CREATED, tags=["rental"])
+@inject
+async def create_rental(
+    rental: RentalSchemaIn,
+    rental_service: AuthorService = Depends(Provide[Container.rental_service]),
+    token: str = Depends(oauth2_scheme),
+):
+    try:
+        data = await get_current_user(token)
+        rental = rental.copy(update={"user_id": data["id"]})
+        return rental_service.create_rental(rental)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.put("/rental", status_code=status.HTTP_200_OK, tags=["rental"])
+@inject
+async def update_rental(
+    id: int,
+    rental: RentalSchemaIn,
+    rental_service: AuthorService = Depends(Provide[Container.rental_service]),
+):
+    try:
+        return rental_service.update_rental(id, rental)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/rental", status_code=status.HTTP_200_OK, tags=["rental"])
+@inject
+async def delete_rental(
+    id: int,
+    rental_service: AuthorService = Depends(Provide[Container.rental_service]),
+):
+    try:
+        return rental_service.delete_rental(id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
