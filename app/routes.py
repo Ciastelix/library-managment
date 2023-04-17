@@ -30,7 +30,7 @@ load_dotenv()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-def create_jwt_token(data: dict):
+def create_jwt_token(data: dict) -> str:
     expiration = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
     data.update({"exp": expiration})
     token = jwt.encode(
@@ -41,7 +41,7 @@ def create_jwt_token(data: dict):
     return token
 
 
-def decode_jwt_token(token: str):
+def decode_jwt_token(token: str) -> dict[str, str]:
     try:
         payload = jwt.decode(
             token,
@@ -329,7 +329,7 @@ async def update_user(
 @inject
 async def delete_user(
     id: str,
-    user_service: AuthorService = Depends(Provide[Container.user_service]),
+    user_service: RentalService = Depends(Provide[Container.user_service]),
     token: str = Depends(oauth2_scheme),
 ):
     user = await get_current_user(token)
@@ -345,7 +345,7 @@ async def delete_user(
 @inject
 async def get_rental(
     id: str = None,
-    rental_service: AuthorService = Depends(Provide[Container.rental_service]),
+    rental_service: RentalService = Depends(Provide[Container.rental_service]),
     token: str = Depends(oauth2_scheme),
 ):
     user = await get_current_user(token)
@@ -363,7 +363,7 @@ async def get_rental(
 @inject
 async def create_rental(
     rental: RentalSchemaIn,
-    rental_service: AuthorService = Depends(Provide[Container.rental_service]),
+    rental_service: RentalService = Depends(Provide[Container.rental_service]),
     token: str = Depends(oauth2_scheme),
 ):
     user = await get_current_user(token)
@@ -379,7 +379,7 @@ async def create_rental(
 async def update_rental(
     id: str,
     rental: RentalSchemaIn,
-    rental_service: AuthorService = Depends(Provide[Container.rental_service]),
+    rental_service: RentalService = Depends(Provide[Container.rental_service]),
     token: str = Depends(oauth2_scheme),
 ):
     user = await get_current_user(token)
