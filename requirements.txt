@@ -1,0 +1,14 @@
+fastapi>=0.95.1
+sqlalchemy>=1.4.47
+python-dotenv>=1.0.0
+dependency-injector>=4.41.0
+uvicorn>=0.21.1
+pydantic-sqlalchemy>=0.0.9
+pytest>=7.3.1
+passlib>=1.7.4
+pydantic[email]>=1.10.7
+bcrypt>=4.0.1
+python-multipart>=0.0.6
+pyjwt>=2.6.0
+httpx>=0.24.0
+anyio>=3.6.2

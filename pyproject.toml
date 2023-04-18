@@ -20,6 +20,8 @@ dependencies = [
     "bcrypt>=4.0.1",
     "python-multipart>=0.0.6",
     "pyjwt>=2.6.0",
+    "httpx>=0.24.0",
+    "anyio>=3.6.2",
 ]
 requires-python = ">=3.11"
 license = {text = "MIT"}
