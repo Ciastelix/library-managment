@@ -168,6 +168,7 @@ async def get_author(
     author_service: AuthorService = Depends(Provide[Container.author_service]),
 ) -> list[AuthorSchema] | AuthorSchema:
     authors = author_service.get_author(id, name)
+
     if authors:
         return authors
     raise HTTPException(status_code=404, detail="Author not found.")
@@ -221,9 +222,9 @@ async def update_author(
     raise HTTPException(status_code=401, detail="Unauthorized")
 
 
-@router.get("/libary", status_code=status.HTTP_200_OK, tags=["library"])
+@router.get("/library", status_code=status.HTTP_200_OK, tags=["library"])
 @inject
-async def get_libary(
+async def get_library(
     id: str = None,
     city: str = None,
     library_service: LibraryService = Depends(Provide[Container.library_service]),
